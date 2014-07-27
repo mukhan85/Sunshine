@@ -1,18 +1,19 @@
 package com.example.sunshine.service;
 
-import android.annotation.SuppressLint;
-import android.util.Log;
-
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.annotation.SuppressLint;
+import android.util.Log;
+
 public class JSonParser {
 	private String jsonString;
-	private Integer numberDays;
 	
 	private static final String LOG_TAG = "SUNSHINE_TAG";
 	private final String KEY_LIST = "list";
@@ -23,15 +24,15 @@ public class JSonParser {
 	private final String KEY_DATETIME = "dt";
 	private final String KEY_DESCRIPTION = "main";
 	
-	public JSonParser(String jsonString, int numberDays) {
+	public JSonParser(String jsonString) {
 		this.jsonString = jsonString;
-		this.numberDays = numberDays;
 	}
 	
 	public String[] getWeatherDataFromJson() throws JSONException {
 		JSONObject forcastJson = new JSONObject(this.jsonString);
 		JSONArray weatherArray = forcastJson.getJSONArray(KEY_LIST);
-		String [] results = new String[this.numberDays];
+		List<String> results = new ArrayList<String>();
+		
 		for(int i = 0; i < weatherArray.length(); ++i) {
 			String day;
 			String description;
@@ -48,11 +49,12 @@ public class JSonParser {
 			double low = temperatureObject.getDouble(KEY_MIN);
 			
 			highAndLow = formatHighLows(high, low);
-			results[i] = day + " - "  +description + " - " + highAndLow;
-			Log.i(LOG_TAG, "Parsed json line: " + results[i]);
+			String line =day + " - "  +description + " - " + highAndLow;
+			Log.i(LOG_TAG, "Parsed Json line: " + line);
+			results.add(line);
 		}
 		
-		return results;
+		return results.toArray(new String[]{});
 	}
 
 	private String formatHighLows(double high, double low) {

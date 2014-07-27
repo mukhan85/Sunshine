@@ -9,6 +9,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -19,6 +20,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -30,10 +32,6 @@ public class ForcastFragment extends Fragment {
 	private LocalDownloadPageWorker worker;
 	private ArrayAdapter<String> forcastAdapter;
 	
-	public ForcastFragment() {
-		this.worker = new LocalDownloadPageWorker();
-	}
-
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -49,7 +47,8 @@ public class ForcastFragment extends Fragment {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		int itemId = item.getItemId();
 		if (itemId == R.id.action_refresh) {
-			worker.execute(urlString);
+			this.worker = new LocalDownloadPageWorker();
+			this.worker.execute(urlString);
 			return true;
 		} else {
 			Log.i(LOG_TAG, "Non Refresh menu has been selected.");
@@ -58,17 +57,26 @@ public class ForcastFragment extends Fragment {
 	}
 
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+	public View onCreateView(LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+		final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
 		List<String> forcastData = new ArrayList<String>();
-		
+		this.worker = new LocalDownloadPageWorker();
+		this.worker.execute(urlString);
 		
 		forcastAdapter = new ArrayAdapter<String>(getActivity(), R.layout.list_item_forcast, R.id.list_item_forecast_text, forcastData);
 
 		ListView listView = (ListView) rootView.findViewById(R.id.list_item_forecast_text);
 		listView.setAdapter(forcastAdapter);
-
+		
+		listView.setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {
+			@Override public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+				String forcastDetail = forcastAdapter.getItem(position);
+				Intent weatherDetailsIntent = new Intent(rootView.getContext(), DetailActivity.class);
+				weatherDetailsIntent.putExtra(Intent.EXTRA_INTENT, forcastDetail);
+				startActivity(weatherDetailsIntent);
+			}
+		});
 		return rootView;
 	}
 
@@ -87,22 +95,18 @@ public class ForcastFragment extends Fragment {
 					URL url = new URL(eachUrlString);
 					Log.i(LOG_TAG, "Created URL object : " + url.toString());
 					urlConnection = (HttpURLConnection) url.openConnection();
-					Log.i(LOG_TAG,
-							"Opened Connection URL object : " + url.toString());
+					Log.i(LOG_TAG, "Opened Connection URL object : " + url.toString());
 					urlConnection.setRequestMethod("GET");
-					Log.i(LOG_TAG,
-							"Set the Request Method URL object : "
-									+ url.toString());
+					Log.i(LOG_TAG, "Set the Request Method URL object : " + url.toString());
 					urlConnection.connect();
 					Log.i(LOG_TAG, "Connected to URL  : " + url.toString());
 
 					// Read the input Stream into a String.
 					InputStream inputStream = urlConnection.getInputStream();
-					reader = new BufferedReader(new InputStreamReader(
-							inputStream));
+					reader = new BufferedReader(new InputStreamReader(inputStream));
 					jsonContent = readWebPage(reader);
 
-					this.jsonParser = new JSonParser(jsonContent, 5);
+					this.jsonParser = new JSonParser(jsonContent);
 					resultedData = this.jsonParser.getWeatherDataFromJson();
 					Log.i(LOG_TAG, "Parsed JSon content: " + resultedData);
 				} catch (Exception e) {
