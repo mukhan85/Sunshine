@@ -28,7 +28,7 @@ public class JSonParser {
 		this.jsonString = jsonString;
 	}
 	
-	public String[] getWeatherDataFromJson() throws JSONException {
+	public String[] getWeatherDataFromJson(String units) throws JSONException {
 		JSONObject forcastJson = new JSONObject(this.jsonString);
 		JSONArray weatherArray = forcastJson.getJSONArray(KEY_LIST);
 		List<String> results = new ArrayList<String>();
@@ -48,6 +48,14 @@ public class JSonParser {
 			double high = temperatureObject.getDouble(KEY_MAX);
 			double low = temperatureObject.getDouble(KEY_MIN);
 			
+			if("imperial".equalsIgnoreCase(units)) {
+				Log.i(LOG_TAG, "Using Imperial units for temperature");
+				high = convertToFahrenheit(high);
+				low = convertToFahrenheit(low);
+			} else {
+				Log.i(LOG_TAG, "Using Metric units for Temperature");
+			}
+			
 			highAndLow = formatHighLows(high, low);
 			String line =day + " - "  +description + " - " + highAndLow;
 			Log.i(LOG_TAG, "Parsed Json line: " + line);
@@ -57,11 +65,14 @@ public class JSonParser {
 		return results.toArray(new String[]{});
 	}
 
+	private double convertToFahrenheit(double celcius) {
+		return (celcius * 9 )/5 + 32;
+	}
+
 	private String formatHighLows(double high, double low) {
 		long roundedHigh = Math.round(high);
 		long roundedLow = Math.round(low);
 		String highLowStr = roundedHigh + "/" + roundedLow;
-		
 		return highLowStr;
 	}
 
